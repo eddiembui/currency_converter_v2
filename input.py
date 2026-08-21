@@ -15,9 +15,9 @@ quote_currency = "".join(map(str, args.to))
 
 amount_to_be_converted = Decimal("".join(map(str, args.amount)))
 
-exchange_rate = format(Decimal(api_call(base_currency, quote_currency)), ".2f")
-print(exchange_rate)
+exchange_rate = format(Decimal(api_call(base_currency, quote_currency)), ".5g")
 
 
 
-print(f"Amount to be converted is {Decimal(amount_to_be_converted):,.2f}")
+
+print(f"Your money from {base_currency} to {quote_currency} is now {Decimal(amount_to_be_converted) * Decimal(exchange_rate):.2f} {quote_currency}")
