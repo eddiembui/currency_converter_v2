@@ -2,8 +2,13 @@ import argparse
 from decimal import Decimal
 import requests
 import json
+import os
+from dotenv import load_dotenv
 
 
+
+load_dotenv()
+api_key = os.getenv("API_URL")
 parser = argparse.ArgumentParser()
 def main():
   parser.add_argument("-a", "--amount", type=float, nargs = 1, required = True, help = "Amount to be converted")
@@ -30,17 +35,18 @@ def get_exchange_rate(base, quote, amount):
       
           
   except (FileNotFoundError, json.JSONDecodeError):
-    response = requests.get(f"https://v6.exchangerate-api.com/v6/c7f741e93737d04413c795d9/pair/{base}/{quote}").json()
+    response = requests.get(f"{api_key}{base}/{quote}").json()
     json_data = {"base_code": response["base_code"], "target_code": response["target_code"], "conversion_rate": response["conversion_rate"]}
     with open("rates.json", "w") as file:
       json.dump([json_data], file, indent=4)
+    print(calculate_amount(json_data, amount))
       
   
 
 def update_cache_file(filename, base, quote):
   with open(filename, "r") as file:
     json_data = json.load(file)
-  response = requests.get(f"https://v6.exchangerate-api.com/v6/c7f741e93737d04413c795d9/pair/{base}/{quote}").json()
+  response = requests.get(f"{api_key}{base}/{quote}").json()
   info = {"base_code": response["base_code"], "target_code": response["target_code"], "conversion_rate": response["conversion_rate"]}
   json_data.append(info)
   with open(filename, "w") as file:
