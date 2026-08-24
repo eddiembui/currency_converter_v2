@@ -1,0 +1,6 @@
+argparse
+decimal
+requests
+json
+dotenv
+pytest
