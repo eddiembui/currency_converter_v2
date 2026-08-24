@@ -41,11 +41,11 @@ def get_exchange_rate(base, quote, amount):
           
   except (FileNotFoundError, json.JSONDecodeError):
     response = requests.get(f"{api_key}{base}/{quote}").json()
-    
-    if response["error-type"] == "unsupported-code":
-      raise ValueError("Wrong currency code entered!")
-    elif response["error-type"] == "quota-reached":
-      raise LimitError("API requests limit reached!")
+    if response["result"] == "error":
+      if response["error-type"] == "unsupported-code":
+        raise ValueError("Wrong currency code entered!")
+      elif response["error-type"] == "quota-reached":
+        raise LimitError("API requests limit reached!")
     
     json_data = {"base_code": response["base_code"], "target_code": response["target_code"], "conversion_rate": response["conversion_rate"]}
     with open("rates.json", "w") as file:
@@ -57,17 +57,23 @@ def get_exchange_rate(base, quote, amount):
 def update_cache_file(filename, base, quote):
   with open(filename, "r") as file:
     json_data = json.load(file)
-  response = requests.get(f"{api_key}{base}/{quote}").json()
 
-  if response["error-type"] == "unsupported-code":
-    raise ValueError("Wrong currency code entered!")
-  elif response["error-type"] == "quota-reached":
-    raise LimitError("API requests limit reached!")
+  try:
+    info = next((line for line in json_data if line["base_code"] == base and line["target_code"] == quote))
+  except StopIteration:
   
-  info = {"base_code": response["base_code"], "target_code": response["target_code"], "conversion_rate": response["conversion_rate"]}
-  json_data.append(info)
-  with open(filename, "w") as file:
-    json.dump(json_data, file, indent=4)
+    response = requests.get(f"{api_key}{base}/{quote}").json()
+
+    if response["result"] == "error":
+      if response["error-type"] == "unsupported-code":
+        raise ValueError("Wrong currency code entered!")
+      elif response["error-type"] == "quota-reached":
+        raise LimitError("API requests limit reached!")
+    
+    info = {"base_code": response["base_code"], "target_code": response["target_code"], "conversion_rate": response["conversion_rate"]}
+    json_data.append(info)
+    with open(filename, "w") as file:
+      json.dump(json_data, file, indent=4)
 
   return info
   
@@ -75,7 +81,7 @@ def update_cache_file(filename, base, quote):
 def calculate_amount(rates, amount):
   new_rate = f"{rates["conversion_rate"]:.5g}"
 
-  converted_amount = amount * Decimal(new_rate)
+  converted_amount = Decimal(amount) * Decimal(new_rate)
 
   return f"Amount in {rates["target_code"]} is {converted_amount:.2f}"
 
